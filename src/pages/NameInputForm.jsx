@@ -1,82 +1,71 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './NameInputForm.css';
+import { SERVER } from '../utils/config';
+
 
 const NameInputForm = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    roomCode: '',
-  });
-  const navigate = useNavigate();
 
-  // Handle input changes for both fields
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("")
+  const [roomId, setRoomId] = useState("");
+
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    try {
+      console.log("YOOO");
+      
+      const response = await axios.get(${SERVER}/create-room);
+      setRoomId(response.data.room_id);
+    } catch (error) {
+      console.error("Error creating room:", error);
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleJoinRoom = (e) => {
     e.preventDefault();
-
-    const { name, roomCode } = formData;
-
-    if (name && roomCode) {
-      try {
-        const response = await fetch('http://localhost:5000/api/enter-room', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name, roomCode }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          navigate(`/room/${roomCode}`, { state: { name } });
-        } else {
-          alert('Room not found or some error occurred');
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        alert('Something went wrong');
-      }
-    }
+    if(!roomId) return;
+    navigate(/room/${roomId}, { state: { username } })
+    console.log("YOOOOOOOOOOO");
+    
   };
 
   return (
     <div className="name-input-form">
       <div className="form-container">
         <h1 className="title">Enter Room</h1>
-        <form onSubmit={handleSubmit}>
+        <form>
           <div className="input-group">
-            <label htmlFor="name">Your Name</label>
+            <label htmlFor="name">Username</label>
             <input
               id="name"
               type="text"
-              placeholder="Enter your name"
+              placeholder="Enter username"
               name="name"
-              value={formData.name}
-              onChange={handleInputChange}
+              value={username}
+              required
+              onChange={(e) => setUsername(e.target.value)}
             />
+            <hr />
+            <button onClick={handleCreateRoom} className="submit-btn">
+              Create Room
+            </button>
           </div>
           <div className="input-group">
-            <label htmlFor="roomCode">Room Code</label>
+            <label htmlFor="roomCode">Room ID</label>
             <input
               id="roomCode"
               type="text"
-              placeholder="Enter room code"
+              placeholder="Enter room ID"
               name="roomCode"
-              value={formData.roomCode}
-              onChange={handleInputChange}
+              value={roomId}
+              onChange={(e) => setRoomId(e.target.value)}
             />
+            <button onClick={handleJoinRoom} className="submit-btn">
+              Join Room
+            </button>
           </div>
-          <button type="submit" className="submit-btn">
-            Enter Room
-          </button>
         </form>
       </div>
     </div>

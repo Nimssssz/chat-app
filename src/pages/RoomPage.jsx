@@ -2,28 +2,29 @@ import { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './RoomPage.css';
+import { io } from 'socket.io-client';
+import { SERVER } from '../utils/config';
 
 const RoomPage = () => {
   const { roomCode } = useParams();
-  const { state } = useLocation();
-  const { name } = state || {}; // Default to empty object if state is undefined
 
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
-  const [users, setUsers] = useState([]);
+  const [socket, setSocket] = useState(null);
+
+  const { state } = useLocation();
+  const username = state?.username;
 
   // Send message to backend and update the state
-  const sendMessage = async () => {
-    if (message.trim()) {
-      const newMessage = { name, text: message, timestamp: new Date().toLocaleTimeString() };
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
-      setMessage('');
+  const sendMessage = () => {
+    try {
+      console.log(username);
+      console.log(roomCode + " " + username + " " + message);
 
-      try {
-        await axios.post('/api/messages', { roomCode, name, text: message });
-      } catch (error) {
-        console.error("Error sending message:", error);
-      }
+      socket.emit("newMessage", { room_id: roomCode, username: username, msg: message });
+      setMessage("");
+    } catch (error) {
+
     }
   };
 
@@ -31,19 +32,29 @@ const RoomPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [userResponse, messageResponse] = await Promise.all([
-          axios.get(`/api/room/${roomCode}/users`),
-          axios.get(`/api/room/${roomCode}/messages`)
-        ]);
 
-        setUsers(Array.isArray(userResponse.data) ? userResponse.data : []);
-        setMessages(Array.isArray(messageResponse.data) ? messageResponse.data : []);
+        const response = await axios.get(${SERVER}/messages/${roomCode});
+        setMessages(response.data.messages);
+        console.log(response.data);
+
       } catch (error) {
-        console.error("Error fetching data:", error);
+
       }
     };
 
+    const socketInstance = io(SERVER);
+    setSocket(socketInstance);
+
+    socketInstance.emit("joinRoom", roomCode);
+
+    socketInstance.on("message", (msg) => {
+      setMessages((prevMessages) => [...prevMessages, msg]);
+    });
+
     fetchData();
+    return () => {
+      socketInstance.disconnect();  // Clean up the socket connection when the component unmounts
+    };
   }, [roomCode]);
 
   return (
@@ -51,24 +62,12 @@ const RoomPage = () => {
       <div className="chat-container">
         <h2 className="room-code">Room Code: {roomCode}</h2>
 
-        <div className="users-list">
-          <h3>Users in the Room:</h3>
-          <ul>
-            {users.length > 0 ? (
-              users.map((user, index) => (
-                <li key={index}>{user.name}</li>
-              ))
-            ) : (
-              <li>No users found</li>
-            )}
-          </ul>
-        </div>
 
         <div className="chat-window">
           {messages.length > 0 ? (
             messages.map((msg, index) => (
               <div key={index} className="message">
-                <strong>{msg.name}:</strong> {msg.text} <span className="timestamp">({msg.timestamp})</span>
+                <strong>{msg.username}:</strong> {msg.msg} <span className="timestamp">({msg.timestamp})</span>
               </div>
             ))
           ) : (
