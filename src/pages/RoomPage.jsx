@@ -16,8 +16,10 @@ const RoomPage = () => {
   const username = state?.username;
 
   // Send message to backend and update the state
-  const sendMessage = () => {
+  const sendMessage = (e) => {
     try {
+      e.preventDefault();
+      
       console.log(username);
       console.log(roomCode + " " + username + " " + message);
 
@@ -33,7 +35,7 @@ const RoomPage = () => {
     const fetchData = async () => {
       try {
 
-        const response = await axios.get(${SERVER}/messages/${roomCode});
+        const response = await axios.get(`${SERVER}/messages/${roomCode}`);
         setMessages(response.data.messages);
         console.log(response.data);
 
@@ -81,6 +83,11 @@ const RoomPage = () => {
             placeholder="Type a message..."
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMessage(e);
+              }
+            }}
           />
           <button onClick={sendMessage}>Send</button>
         </div>

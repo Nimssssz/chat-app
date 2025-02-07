@@ -4,11 +4,10 @@ import axios from 'axios';
 import './NameInputForm.css';
 import { SERVER } from '../utils/config';
 
-
 const NameInputForm = () => {
 
   const navigate = useNavigate();
-  const [username, setUsername] = useState("")
+  const [username, setUsername] = useState("");
   const [roomId, setRoomId] = useState("");
 
   const handleCreateRoom = async (e) => {
@@ -16,7 +15,8 @@ const NameInputForm = () => {
     try {
       console.log("YOOO");
       
-      const response = await axios.get(${SERVER}/create-room);
+      // Fixed the template literal here
+      const response = await axios.get(`${SERVER}/create-room`);
       setRoomId(response.data.room_id);
     } catch (error) {
       console.error("Error creating room:", error);
@@ -25,10 +25,11 @@ const NameInputForm = () => {
 
   const handleJoinRoom = (e) => {
     e.preventDefault();
-    if(!roomId) return;
-    navigate(/room/${roomId}, { state: { username } })
+    if (!roomId) return;
+
+    // Fixed the template literal here as well
+    navigate(`/room/${roomId}`, { state: { username } });
     console.log("YOOOOOOOOOOO");
-    
   };
 
   return (
